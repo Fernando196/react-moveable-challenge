@@ -2,12 +2,54 @@ import React, { useRef, useState } from "react";
 import Moveable from "react-moveable";
 import { useFetchImages } from "./hook/useFetchImages";
 
-const objectsFits = [ 'fill','contain','cover','none','scale-down' ]
+const objectsFits = [ 'fill','contain','cover','none','scale-down' ];
+
+const Editable = {
+  name: "editable",
+  props: {},
+  events: {},
+  render(moveable, React) {
+      const rect = moveable.getRect();
+      const { pos2 } = moveable.state;
+
+      const EditableViewer = moveable.useCSS("div", `
+        {
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            will-change: transform;
+            transform-origin: 0px 0px;
+        }
+        .moveable-button {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+            background: #4af;
+            border-radius: 4px;
+            appearance: none;
+            border: 0;
+            color: white;
+            font-weight: bold;
+        }
+      `);
+      return <EditableViewer key="editable-viewer" className={"moveable-editable"} style={{
+          transform: `translate(${pos2[0]}px, ${pos2[1]}px) rotate(${rect.rotation}deg) translate(10px)`,
+      }}>
+          <button className="moveable-button" onClick={() => {
+            moveable.props.onDelete( moveable.props.target.id.replace('component-','') );
+           }}>x</button>
+      </EditableViewer>;
+  }
+};
 
 const App = () => {
   const { images, isLoading } = useFetchImages();
   const [moveableComponents, setMoveableComponents] = useState([]);
   const [selected, setSelected] = useState(null);
+
+  const removeMoveable = ( id ) =>{
+    setMoveableComponents([ ...moveableComponents.filter(m=>m.id !== parseInt(id) ) ])
+  }
 
   const addMoveable = ( image ) => {
     // Create a new moveable component and add it to the array
@@ -83,6 +125,7 @@ const App = () => {
             handleResizeStart={handleResizeStart}
             setSelected={setSelected}
             isSelected={selected === item.id}
+            onDelete={removeMoveable}
           />
         ))}
       </div>
@@ -106,6 +149,7 @@ const Component = ({
   setSelected,
   isSelected = false,
   updateEnd,
+  onDelete
 }) => {
   const ref = useRef();
 
@@ -118,7 +162,8 @@ const Component = ({
     color,
     urlImage,
     id,
-    objectFit
+    objectFit,
+    onDelete
   });
 
   let parent = document.getElementById("parent");
@@ -144,7 +189,8 @@ const Component = ({
       height: newHeight,
       color,
       urlImage,
-      objectFit
+      objectFit,
+      onDelete
     });
 
     // ACTUALIZAR NODO REFERENCIA
@@ -165,7 +211,8 @@ const Component = ({
       top: top + translateY < 0 ? 0 : top + translateY,
       left: left + translateX < 0 ? 0 : left + translateX,
       urlImage,
-      objectFit
+      objectFit,
+      onDelete
     });
   };
 
@@ -197,7 +244,8 @@ const Component = ({
         height: newHeight,
         color,
         urlImage,
-      objectFit
+        objectFit,
+        onDelete
       },
       true
     );
@@ -224,10 +272,15 @@ const Component = ({
       </div>
 
       <Moveable
+        ables={[ Editable ]}
+        props={{
+          editable: true
+        }}
         target={isSelected && ref.current}
         resizable
         draggable
         snappable={true}
+        onDelete={ onDelete }
         bounds={{ left: 0, top: 0, right: parentBounds.right - 8, bottom: parentBounds.bottom - 30 }}
         onDrag={(e) => {
           updateMoveable(id, {
