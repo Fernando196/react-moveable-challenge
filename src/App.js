@@ -43,10 +43,12 @@ const Editable = {
 };
 
 const App = () => {
+  // Se crea un custom hook para recibir las imagenes
   const { images, isLoading } = useFetchImages();
   const [moveableComponents, setMoveableComponents] = useState([]);
   const [selected, setSelected] = useState(null);
 
+  // Resive el id en formato string para eliminar el componente
   const removeMoveable = ( id ) =>{
     setMoveableComponents([ ...moveableComponents.filter(m=>m.id !== parseInt(id) ) ])
   }
@@ -106,16 +108,13 @@ const App = () => {
   };
 
   return (
-    <main style={{ height : "100vh", width: "100vw" }}>
-      <button disabled={ isLoading } onClick={addMoveable}>Add Moveable1</button>
+    <main>
+      <div className="center-button">
+        <button className="btn-add-moveable" disabled={ isLoading } onClick={addMoveable}>Add Item</button>
+      </div>
       <div
+        className="container-drag"
         id="parent"
-        style={{
-          position: "relative",
-          background: "black",
-          height: "80vh",
-          width: "80vw",
-        }}
       >
         {moveableComponents.map((item, index) => (
           <Component
@@ -281,7 +280,7 @@ const Component = ({
         draggable
         snappable={true}
         onDelete={ onDelete }
-        bounds={{ left: 0, top: 0, right: parentBounds.right - 8, bottom: parentBounds.bottom - 30 }}
+        bounds={{ left: 0, top: 0, right: parentBounds.right - 100, bottom: parentBounds.bottom - 60 }}
         onDrag={(e) => {
           updateMoveable(id, {
             top: e.top,
