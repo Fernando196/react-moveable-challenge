@@ -1,13 +1,17 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import Moveable from "react-moveable";
+import { useFetchImages } from "./hook/useFetchImages";
+
+const objectsFits = [ 'fill','contain','cover','none','scale-down' ]
 
 const App = () => {
+  const { images, isLoading } = useFetchImages();
   const [moveableComponents, setMoveableComponents] = useState([]);
   const [selected, setSelected] = useState(null);
 
-  const addMoveable = () => {
+  const addMoveable = ( image ) => {
     // Create a new moveable component and add it to the array
-    const COLORS = ["red", "blue", "yellow", "green", "purple"];
+    const { url,id } = images[ moveableComponents.length + 1 ];
 
     setMoveableComponents([
       ...moveableComponents,
@@ -17,13 +21,18 @@ const App = () => {
         left: 0,
         width: 100,
         height: 100,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        updateEnd: true
+        color: Math.floor(Math.random() * id),
+        updateEnd: true,
+        urlImage: url,
+        objectFit: objectsFits[ Math.floor(Math.random() * objectsFits.length) ]
       },
     ]);
   };
 
   const updateMoveable = (id, newComponent, updateEnd = false) => {
+
+    if(updateEnd) return;
+
     const updatedMoveables = moveableComponents.map((moveable, i) => {
       if (moveable.id === id) {
         return { id, ...newComponent, updateEnd };
@@ -56,7 +65,7 @@ const App = () => {
 
   return (
     <main style={{ height : "100vh", width: "100vw" }}>
-      <button onClick={addMoveable}>Add Moveable1</button>
+      <button disabled={ isLoading } onClick={addMoveable}>Add Moveable1</button>
       <div
         id="parent"
         style={{
@@ -91,6 +100,8 @@ const Component = ({
   height,
   index,
   color,
+  urlImage,
+  objectFit,
   id,
   setSelected,
   isSelected = false,
@@ -105,7 +116,9 @@ const Component = ({
     height,
     index,
     color,
+    urlImage,
     id,
+    objectFit
   });
 
   let parent = document.getElementById("parent");
@@ -130,6 +143,8 @@ const Component = ({
       width: newWidth,
       height: newHeight,
       color,
+      urlImage,
+      objectFit
     });
 
     // ACTUALIZAR NODO REFERENCIA
@@ -149,6 +164,8 @@ const Component = ({
       translateY,
       top: top + translateY < 0 ? 0 : top + translateY,
       left: left + translateX < 0 ? 0 : left + translateX,
+      urlImage,
+      objectFit
     });
   };
 
@@ -179,6 +196,8 @@ const Component = ({
         width: newWidth,
         height: newHeight,
         color,
+        urlImage,
+      objectFit
       },
       true
     );
@@ -196,15 +215,20 @@ const Component = ({
           left: left,
           width: width,
           height: height,
-          background: color,
+          backgroundColor: color,
+          overflow:'hidden'
         }}
         onClick={() => setSelected(id)}
-      />
+      >
+        <img style={{ objectFit: `${objectFit}`,height:'100%',width:'100%' }} src={ urlImage } alt="image" />
+      </div>
 
       <Moveable
         target={isSelected && ref.current}
         resizable
         draggable
+        snappable={true}
+        bounds={{ left: 0, top: 0, right: parentBounds.right - 8, bottom: parentBounds.bottom - 30 }}
         onDrag={(e) => {
           updateMoveable(id, {
             top: e.top,
@@ -212,6 +236,7 @@ const Component = ({
             width,
             height,
             color,
+            urlImage
           });
         }}
         onResize={onResize}
